@@ -16,9 +16,9 @@
     "prepare": "patch-package",
     "prettier": "prettier --write \"src/**/*.js\"",
     "prettier:list": "prettier --list-different \"src/**/*.js\"",
-    "start": "nodemon --exec ts-node ./src/index.ts",
-    "start:debug": "node --inspect ./node_modules/.bin/ts-node ./src/index.ts",
-    "start:debug:ndb": "ndb ./node_modules/.bin/ts-node ./src/index.ts",
+    "start": "nodemon --exec ts-node --files ./src/index.ts",
+    "start:debug": "node --inspect ./node_modules/.bin/ts-node --files ./src/index.ts",
+    "start:debug:ndb": "ndb ./node_modules/.bin/ts-node --files ./src/index.ts",
     "build": "tsc"
   },
   "prettier": {

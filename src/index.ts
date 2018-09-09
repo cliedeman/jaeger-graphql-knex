@@ -5,14 +5,16 @@ import middleware from 'express-opentracing';
 
 import tracer from './tracer';
 import schema from './schema';
+import Context from './Context';
+
 import ApolloTracingExtension from './ApolloTracingExtension';
 
 const port = 5000;
 const server = new ApolloServer({
   schema,
   // Make req available on the context
-  context: async ({req}: {req: Request}) => {
-    return {req};
+  context: ({req}: {req: Request}) => {
+    return new Context(tracer, req);
   },
   extensions: [() => new ApolloTracingExtension(tracer)],
 });

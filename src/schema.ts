@@ -13,6 +13,15 @@ const Person = new GraphQLObjectType({
   }),
 });
 
+import Context from './Context';
+
+const wait = (seconds: number) =>
+  new Promise((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, seconds * 1000);
+  });
+
 const people = [
   {
     name: 'Alice',
@@ -27,8 +36,17 @@ const query = new GraphQLObjectType({
   fields: () => ({
     people: {
       type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(Person))),
-      resolve: () => {
-        return people;
+      resolve: async (parent: any, args: any, context: Context) => {
+        const span = context.startSpan('someRemoteCall');
+        // Mock Service call
+        try {
+          await wait(1);
+          span.finish();
+          return people;
+        } catch (ex) {
+          // TODO: simulate error
+          span.finish();
+        }
       },
     },
   }),

@@ -5,18 +5,12 @@ import {
   EndHandler,
 } from 'graphql-extensions';
 import {Request} from 'apollo-server-env';
-// TODO include index.d.ts in opentracing package
-// @ts-ignore
-import {Tracer, globalTracer} from 'opentracing';
+import {Span, Tracer, globalTracer} from 'opentracing';
 
-interface TContext {
-  req: {
-    span: any;
-  };
-}
+import Context from './Context';
 
 export default class ApolloTracingExtension
-  implements GraphQLExtension<TContext> {
+  implements GraphQLExtension<Context> {
   private tracer: Tracer;
 
   constructor(tracer?: Tracer) {
@@ -31,10 +25,9 @@ export default class ApolloTracingExtension
     variables?: {[key: string]: any};
     persistedQueryHit?: boolean;
     persistedQueryRegister?: boolean;
-    context: TContext;
+    context: Context;
   }): EndHandler {
-    const span = this.tracer.startSpan('apolloRequest', {
-      childOf: o.context.req.span,
+    const span = o.context.startSpan('apolloRequest', {
       tags: {
         // Query Operation name. may be null
         operationName: o.operationName,
@@ -44,49 +37,56 @@ export default class ApolloTracingExtension
       if (errors.length > 0) {
         span.setTag('error', true);
         span.setTag('sampling.priority', 1);
+
+        span.log({
+          event: 'error',
+          message: 'Error during Request',
+          stack: errors.map((err) => err.stack).join('\n'),
+        });
       }
 
       span.finish();
     };
   }
 
+  // TODO these methods to not have context
+  // see https://github.com/apollographql/apollo-server/pull/1547#issuecomment-419736942
   // public parsingDidStart?(o: {queryString: string}): EndHandler | void;
   // public validationDidStart?(): EndHandler | void;
 
   public executionDidStart?(o: {executionArgs: ExecutionArgs}): EndHandler {
-    const span = this.tracer.startSpan('apolloExecution', {
-      childOf: o.executionArgs.contextValue.req.span,
-    });
+    const span = o.executionArgs.contextValue.startSpan('apolloExecution', {});
     return (...errors: Array<Error>) => {
       if (errors.length > 0) {
         span.setTag('error', true);
         span.setTag('sampling.priority', 1);
+
+        span.log({
+          event: 'error',
+          message: 'Error during Execution',
+          stack: errors.map((err) => err.stack).join('\n'),
+        });
       }
 
       span.finish();
     };
   }
 
-  // TODO is this needed?
   public willSendResponse?(o: {
     graphqlResponse: GraphQLResponse;
-    context: TContext;
-  }): {graphqlResponse: GraphQLResponse; context: TContext} {
-    // console.log('willSendResponse');
+    context: Context;
+  }): {graphqlResponse: GraphQLResponse; context: Context} {
+    o.context.span.log({event: 'willSendResponse'});
     return o;
   }
 
   public willResolveField?(
     source: any,
     args: {[argName: string]: any},
-    context: TContext,
+    context: Context,
     info: GraphQLResolveInfo
-  ): ((error: Error | null, result?: any) => void) | void {
-    // console.log(
-    //   `willResolveField Path: ${JSON.stringify(info.path)}, FieldName: ${
-    //     info.fieldName
-    //   }`
-    // );
-    return undefined;
+  ): void {
+    // TODO include full path
+    context.span.log({event: 'willResolveField', fieldName: info.fieldName});
   }
 }
