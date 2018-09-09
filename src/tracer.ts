@@ -14,7 +14,14 @@ const options = {
     'my-awesome-service.version': '1.1.2',
   },
   // metrics: metrics,
-  // logger: logger,
+  logger: {
+    info(msg: string) {
+      console.log(msg);
+    },
+    error(msg: string) {
+      console.error(msg);
+    },
+  },
 };
 
 const tracer = initTracer(config, options);

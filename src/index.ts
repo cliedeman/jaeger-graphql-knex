@@ -1,4 +1,4 @@
-import express from 'express';
+import express, {Request} from 'express';
 import {ApolloServer} from 'apollo-server-express';
 // @ts-ignore
 import middleware from 'express-opentracing';
@@ -10,7 +10,11 @@ import ApolloTracingExtension from './ApolloTracingExtension';
 const port = 5000;
 const server = new ApolloServer({
   schema,
-  extensions: [() => new ApolloTracingExtension<any>()],
+  // Make req available on the context
+  context: async ({req}: {req: Request}) => {
+    return {req};
+  },
+  extensions: [() => new ApolloTracingExtension(tracer)],
 });
 
 const app = express();

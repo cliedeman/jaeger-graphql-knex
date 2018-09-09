@@ -9,7 +9,13 @@ import {Request} from 'apollo-server-env';
 // @ts-ignore
 import {Tracer, globalTracer} from 'opentracing';
 
-export default class ApolloTracingExtension<TContext = any>
+interface TContext {
+  req: {
+    span: any;
+  };
+}
+
+export default class ApolloTracingExtension
   implements GraphQLExtension<TContext> {
   private tracer: Tracer;
 
@@ -25,13 +31,22 @@ export default class ApolloTracingExtension<TContext = any>
     variables?: {[key: string]: any};
     persistedQueryHit?: boolean;
     persistedQueryRegister?: boolean;
+    context: TContext;
   }): EndHandler {
-    // @ts-ignore
-    console.log(o.request.span);
-
-    console.log(`requestDidStart. Operation: ${o.operationName}`);
+    const span = this.tracer.startSpan('apolloRequest', {
+      childOf: o.context.req.span,
+      tags: {
+        // Query Operation name. may be null
+        operationName: o.operationName,
+      },
+    });
     return (...errors: Array<Error>) => {
-      console.log(`requestDidEnd. Operation: ${o.operationName}`);
+      if (errors.length > 0) {
+        span.setTag('error', true);
+        span.setTag('sampling.priority', 1);
+      }
+
+      span.finish();
     };
   }
 
@@ -39,17 +54,25 @@ export default class ApolloTracingExtension<TContext = any>
   // public validationDidStart?(): EndHandler | void;
 
   public executionDidStart?(o: {executionArgs: ExecutionArgs}): EndHandler {
-    console.log('executionDidStart');
+    const span = this.tracer.startSpan('apolloExecution', {
+      childOf: o.executionArgs.contextValue.req.span,
+    });
     return (...errors: Array<Error>) => {
-      console.log('executionDidEnd');
+      if (errors.length > 0) {
+        span.setTag('error', true);
+        span.setTag('sampling.priority', 1);
+      }
+
+      span.finish();
     };
   }
 
   // TODO is this needed?
   public willSendResponse?(o: {
     graphqlResponse: GraphQLResponse;
-  }): {graphqlResponse: GraphQLResponse} {
-    console.log('willSendResponse');
+    context: TContext;
+  }): {graphqlResponse: GraphQLResponse; context: TContext} {
+    // console.log('willSendResponse');
     return o;
   }
 
@@ -59,11 +82,11 @@ export default class ApolloTracingExtension<TContext = any>
     context: TContext,
     info: GraphQLResolveInfo
   ): ((error: Error | null, result?: any) => void) | void {
-    console.log(
-      `willResolveField Path: ${JSON.stringify(info.path)}, FieldName: ${
-        info.fieldName
-      }`
-    );
+    // console.log(
+    //   `willResolveField Path: ${JSON.stringify(info.path)}, FieldName: ${
+    //     info.fieldName
+    //   }`
+    // );
     return undefined;
   }
 }

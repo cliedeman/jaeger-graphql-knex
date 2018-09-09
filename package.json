@@ -13,6 +13,7 @@
     "objection": "^1.2.6"
   },
   "scripts": {
+    "prepare": "patch-package",
     "prettier": "prettier --write \"src/**/*.js\"",
     "prettier:list": "prettier --list-different \"src/**/*.js\"",
     "start": "nodemon --exec ts-node ./src/index.ts",
@@ -31,6 +32,7 @@
     "@types/graphql": "^14.0.0",
     "jest": "^23.5.0",
     "nodemon": "^1.18.4",
+    "patch-package": "^5.1.1",
     "prettier": "^1.14.2",
     "ts-jest": "^23.1.4",
     "ts-node": "^7.0.1",

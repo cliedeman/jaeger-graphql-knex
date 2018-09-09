@@ -1,0 +1,20 @@
+patch-package
+--- a/node_modules/apollo-server-core/dist/runQuery.js
++++ b/node_modules/apollo-server-core/dist/runQuery.js
+@@ -46,6 +46,7 @@ function doRunQuery(options) {
+         variables: options.variables,
+         persistedQueryHit: options.persistedQueryHit,
+         persistedQueryRegister: options.persistedQueryRegister,
++        context,
+     });
+     return Promise.resolve()
+         .then(() => {
+@@ -155,7 +156,7 @@ function doRunQuery(options) {
+         throw err;
+     })
+         .then((graphqlResponse) => {
+-        const response = extensionStack.willSendResponse({ graphqlResponse });
++        const response = extensionStack.willSendResponse({ graphqlResponse, context });
+         requestDidEnd();
+         return response.graphqlResponse;
+     });
