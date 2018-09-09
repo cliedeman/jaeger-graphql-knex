@@ -37,7 +37,7 @@ export default class Context {
       } else {
         console.warn(
           `Spans being popped off in incorrect order. 
-          Span Finishing: ${span}, Expected Span: ${topSpan}.`
+            Span Finishing: ${span}, Expected Span: ${topSpan}.`
         );
 
         // TODO remove the span anyway?

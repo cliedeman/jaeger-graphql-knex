@@ -2,17 +2,46 @@
 
 This project is an experiment to see how well open tracing can work with graphql, express and objection/knex
 
+![alt Sample Trace](https://github.com/cliedeman/jaeger-graphql-knex/blob/master/img/jaeger-ui.png)
+
 # Getting Started
+
+## Requirements
+
+- node
+- yarn
+- docker and docker-compose
+
+## Setup
 
     docker-compose up # To start jaeger
     yarn install
     yarn start
 
-[Server](http://localhost:5000/graphiql)
+[Server](http://localhost:5000/graphql)
 
 [Jaeger UI](http://localhost:16686)
 
+Sample Query:
+
+```
+query PeopleQuery {
+  people {
+    name
+  }
+}
+```
+
+Open the graphql playground and excute the query a few times and then observe the spans created in jaeger
+
 # TODO
+
+- Get every single span to log
+- Types for opentracing
+- Figure out how to deal with parallel field resolution
+- Add objection/knex integration
+- Add joinmonster integration (This may be convered by field instrumentation)
+- Test how it works with batch execution
 
 # Notes
 

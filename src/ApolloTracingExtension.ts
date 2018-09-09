@@ -1,13 +1,35 @@
-import {GraphQLResolveInfo, ExecutionArgs, DocumentNode} from 'graphql';
+import {
+  GraphQLResolveInfo,
+  ExecutionArgs,
+  DocumentNode,
+  ResponsePath,
+} from 'graphql';
 import {
   GraphQLExtension,
   GraphQLResponse,
   EndHandler,
 } from 'graphql-extensions';
 import {Request} from 'apollo-server-env';
-import {Span, Tracer, globalTracer} from 'opentracing';
+import {Tracer, globalTracer} from 'opentracing';
 
 import Context from './Context';
+
+function buildPath(path: ResponsePath) {
+  let current: ResponsePath | undefined = path;
+  const segments = [];
+
+  while (current != null) {
+    if (typeof current.key === 'number') {
+      segments.push(`[${current.key}]`);
+    } else {
+      segments.push(current.key);
+    }
+
+    current = current.prev;
+  }
+
+  return segments.reverse().join('.');
+}
 
 export default class ApolloTracingExtension
   implements GraphQLExtension<Context> {
@@ -27,10 +49,12 @@ export default class ApolloTracingExtension
     persistedQueryRegister?: boolean;
     context: Context;
   }): EndHandler {
-    const span = o.context.startSpan('apolloRequest', {
+    const span = o.context.startSpan('apollo/request', {
       tags: {
         // Query Operation name. may be null
         operationName: o.operationName,
+        query: o.queryString,
+        variables: JSON.stringify(o.variables),
       },
     });
     return (...errors: Array<Error>) => {
@@ -55,7 +79,8 @@ export default class ApolloTracingExtension
   // public validationDidStart?(): EndHandler | void;
 
   public executionDidStart?(o: {executionArgs: ExecutionArgs}): EndHandler {
-    const span = o.executionArgs.contextValue.startSpan('apolloExecution', {});
+    // TODO: this should always use the root span
+    const span = o.executionArgs.contextValue.startSpan('apollo/execution', {});
     return (...errors: Array<Error>) => {
       if (errors.length > 0) {
         span.setTag('error', true);
@@ -76,7 +101,7 @@ export default class ApolloTracingExtension
     graphqlResponse: GraphQLResponse;
     context: Context;
   }): {graphqlResponse: GraphQLResponse; context: Context} {
-    o.context.span.log({event: 'willSendResponse'});
+    o.context.span.log({event: 'apollo/willSendResponse'});
     return o;
   }
 
@@ -85,8 +110,28 @@ export default class ApolloTracingExtension
     args: {[argName: string]: any},
     context: Context,
     info: GraphQLResolveInfo
-  ): void {
-    // TODO include full path
-    context.span.log({event: 'willResolveField', fieldName: info.fieldName});
+  ): (error: Error | null, result?: any) => void {
+    const span = context.startSpan('apollo/willResolveField', {
+      tags: {
+        fieldName: info.fieldName,
+        path: buildPath(info.path),
+        args: JSON.stringify(args),
+      },
+    });
+
+    return (err: Error | null, result?: any) => {
+      if (err != null) {
+        span.setTag('error', true);
+        span.setTag('sampling.priority', 1);
+
+        span.log({
+          event: 'error',
+          message: err.message,
+          stack: err.stack,
+        });
+      }
+
+      span.finish();
+    };
   }
 }
