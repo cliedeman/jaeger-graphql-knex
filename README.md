@@ -36,13 +36,14 @@ Open the graphql playground and excute the query a few times and then observe th
 
 # TODO
 
-- Get every single span to log
-- Retrieve spans in resolvers using `GraphQLResolveInfo`
-- Types for opentracing
-- Figure out how to deal with parallel field resolution
-- Add objection/knex integration
-- Add joinmonster integration (This may be convered by field instrumentation)
-- Test how it works with batch execution
+- [x] Get every single span to log - Done using `ConstSampler`
+- [x] Retrieve spans in resolvers using `GraphQLResolveInfo`
+- [x] Types for opentracing
+- [ ] Submit Opentracing types to definitely typed or enahnce npm package
+- [x] Figure out how to deal with parallel field resolution - Works I think...
+- [ ] Add objection/knex integration
+- [ ] Add joinmonster integration (This may be convered by field instrumentation)
+- [ ] Test how it works with batch execution
 
 # Notes
 
