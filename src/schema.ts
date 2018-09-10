@@ -6,10 +6,27 @@ import {
   GraphQLString,
 } from 'graphql';
 
+import UserService from './UserService';
+
 const Person = new GraphQLObjectType({
   name: 'Person',
   fields: () => ({
-    name: {type: new GraphQLNonNull(GraphQLString)},
+    name: {
+      type: new GraphQLNonNull(GraphQLString),
+      resolve: async (parent: any, args: any, context: Context, info: any) => {
+        const span = context.startResolverSpan(info, 'getPerson');
+
+        try {
+          const user = await UserService.getUserById({span}, parent.id);
+          // Used to force an error
+          // return null;
+          // @ts-ignore
+          return user.name;
+        } finally {
+          span.finish();
+        }
+      },
+    },
   }),
 });
 
@@ -24,10 +41,13 @@ const wait = (seconds: number) =>
 
 const people = [
   {
-    name: 'Alice',
+    id: 1,
   },
   {
-    name: 'Bob',
+    id: 2,
+  },
+  {
+    id: 3,
   },
 ];
 
@@ -36,8 +56,8 @@ const query = new GraphQLObjectType({
   fields: () => ({
     people: {
       type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(Person))),
-      resolve: async (parent: any, args: any, context: Context) => {
-        const span = context.startSpan('someRemoteCall');
+      resolve: async (parent: any, args: any, context: Context, info: any) => {
+        const span = context.startResolverSpan(info, 'getPeople');
         // Mock Service call
         try {
           await wait(1);

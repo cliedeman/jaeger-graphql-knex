@@ -37,6 +37,7 @@ Open the graphql playground and excute the query a few times and then observe th
 # TODO
 
 - Get every single span to log
+- Retrieve spans in resolvers using `GraphQLResolveInfo`
 - Types for opentracing
 - Figure out how to deal with parallel field resolution
 - Add objection/knex integration

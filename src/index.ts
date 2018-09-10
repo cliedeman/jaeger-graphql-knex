@@ -16,7 +16,7 @@ const server = new ApolloServer({
   context: ({req}: {req: Request}) => {
     return new Context(tracer, req);
   },
-  extensions: [() => new ApolloTracingExtension(tracer)],
+  extensions: [() => new ApolloTracingExtension()],
 });
 
 const app = express();
