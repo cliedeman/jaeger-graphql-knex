@@ -20,7 +20,6 @@ const Person = new GraphQLObjectType({
           const user = await UserService.getUserById({span}, parent.id);
           // Used to force an error
           // return null;
-          // @ts-ignore
           return user.name;
         } finally {
           span.finish();

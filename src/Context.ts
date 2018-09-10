@@ -63,14 +63,8 @@ export default class ApolloTracingContext implements ResolverTracingContext {
     let parentSpan: Span | undefined;
     let currentPath: ResponsePath | undefined = path;
 
-    while (currentPath != null) {
+    if (currentPath != null) {
       parentSpan = this.resolverSpans.get(buildPath(currentPath));
-
-      if (parentSpan != null) {
-        break;
-      }
-
-      currentPath = currentPath.prev;
     }
 
     return parentSpan || this.ensureExecuteSpan();

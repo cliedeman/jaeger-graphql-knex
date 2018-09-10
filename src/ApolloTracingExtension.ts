@@ -40,6 +40,8 @@ export default class ApolloTracingExtension
         );
       }
 
+      // No longer convinced this is correct because parent traces
+      // may not be sampled reducing value
       if (errors.length > 0 || o.context.hasErrors) {
         ensureSampled(span);
       }
